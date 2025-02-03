@@ -35,8 +35,9 @@ describe('PrismaWebinarRepository', () => {
     });
 
     // Run migrations to populate the database
-    await asyncExec(`DATABASE_URL=${dbUrl} npx prisma migrate deploy`);
-
+    await asyncExec(
+      `cross-env DATABASE_URL=${dbUrl} npx prisma migrate deploy`,
+    );
     return prismaClient.$connect(); //se connecter a la BD
   });
 
@@ -160,7 +161,24 @@ describe('PrismaWebinarRepository', () => {
         seats: 200,
       });
     });
+
+    //pour verifier que la méthode update lance une erreur si le webinar n'existe pas
+    it('should throw an error if the webinar does not exist', async () => {
+      // ARRANGE
+      const nonExistentWebinar = new Webinar({
+        id: 'non-existent-id',
+        organizerId: 'organizer-id',
+        title: 'Non-Existent Webinar',
+        startDate: new Date('2024-01-01T00:00:00Z'),
+        endDate: new Date('2024-01-01T01:00:00Z'),
+        seats: 100,
+      });
+
+      // ACT & ASSERT
+      await expect(repository.update(nonExistentWebinar)).rejects.toThrow();
+    });
   });
+
   //apres tous les tests
   afterAll(async () => {
     await container.stop({ timeout: 1000 }); // Arrêter le conteneur
